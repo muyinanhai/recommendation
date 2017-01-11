@@ -121,10 +121,9 @@ class FPGrowth(object):
         :param transaction_list:
         :return:
         """
-        recommend = []
-        for transaction in transaction_list:
-            recommend.append(self._ranking(transaction))
-        return recommend
+        transaction_list = [self._clean_transaction(transaction) for transaction in transaction_list]
+        recommend = map(self._ranking,transaction_list)
+        return [ r for r in recommend]
 
 
 class FPTree(object):

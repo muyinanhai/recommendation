@@ -118,10 +118,9 @@ class Apriori(object):
         :param transaction_list:
         :return:
         """
-        recommend = []
-        for transaction in transaction_list:
-            recommend.append(self._ranking(transaction))
-        return recommend
+        transaction_list = [self._clean_transaction(transaction) for transaction in transaction_list]
+        recommend = map(self._ranking,transaction_list)
+        return [ r for r in recommend]
 
     def print_result(self):
         for item, support in sorted(self._to_ret.items(), key=lambda  s: s[1]):
