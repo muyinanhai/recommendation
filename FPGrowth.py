@@ -114,6 +114,7 @@ class FPGrowth(object):
                         continue
                     recommend[single_recommend] = recommend.get(single_recommend, 0) + confidence * self._to_ret[
                         subset] * len(subset) / len(x)
+        recommend = {key:item for key, val in recommend.items() if val>self._min_confidence}
         return sorted(recommend.items(), key=lambda d: d[1], reverse=True)
 
     def predict(self, transaction_list):
