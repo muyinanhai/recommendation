@@ -4,6 +4,7 @@
 ###########################
 
 from collections import defaultdict, namedtuple
+from itertools import chain, combinations
 
 
 class FPGrowth(object):
@@ -13,6 +14,8 @@ class FPGrowth(object):
         self._min_confidence = min_confidence
         self._transaction_len = 0
         self.items = defaultdict(int)
+        self._to_ret = {}
+        self._result = {}
 
     @staticmethod
     def conditional_tree_from_paths(paths):
@@ -54,6 +57,15 @@ class FPGrowth(object):
                 cond_tree = self.conditional_tree_from_paths(tree.prefix_path(item))
                 for s in self.find_with_suffix(cond_tree, found_set):
                     yield s
+    @staticmethod
+    def _sub_set(arr, max_len=None):
+        """
+        :param arr:
+        :return: all combination of arr
+        """
+        if max_len is None:
+            max_len = len(arr)
+        return chain(*[combinations(arr, i+1) for i in range(max_len)])
 
     def fit(self, transactions):
         self._transaction_len = len(transactions)
@@ -67,11 +79,52 @@ class FPGrowth(object):
         for transaction in transactions:
             master.add(self._clean_transaction(transaction))
 
-        for item_set in self.find_with_suffix(master, []):
-            yield item_set
+        for item, su_count in self.find_with_suffix(master, []):
+            self._to_ret[frozenset(item)] = su_count
 
-    def predict(self):
-        pass
+        #geneate rules
+        for item, su_count in self._to_ret.items():
+            subsets = map(frozenset, [x for x in self._sub_set(item, len(item) - 1)])
+            for element in subsets:
+                remain = item.difference(element)
+                confidence = self._to_ret[item] / self._to_ret[element]
+                if confidence >= self._min_confidence:
+                    self._result[element] = self._result.get(element, {})
+                    self._result[element][remain] = confidence
+        for item, su_count in self._to_ret.items():
+            self._to_ret[frozenset(item)] /= self._transaction_len
+        return self._to_ret, self._result
+
+    def _ranking(self, x):
+        """
+        :param x:
+        :return:
+        """
+        subsets = self._sub_set(x)
+        recommend = {}
+        for subset in subsets:
+            subset = frozenset(subset)
+            if subset not in self._to_ret.keys():
+                continue
+            remain = self._result.get(subset, {})
+            for recommend_set, confidence in remain.items():
+                for single_recommend in recommend_set:
+                    # skip the item have occur in x
+                    if single_recommend in x:
+                        continue
+                    recommend[single_recommend] = recommend.get(single_recommend, 0) + confidence * self._to_ret[
+                        subset] * len(subset) / len(x)
+        return sorted(recommend.items(), key=lambda d: d[1], reverse=True)
+
+    def predict(self, transaction_list):
+        """
+        :param transaction_list:
+        :return:
+        """
+        recommend = []
+        for transaction in transaction_list:
+            recommend.append(self._ranking(transaction))
+        return recommend
 
 
 class FPTree(object):
@@ -211,5 +264,7 @@ if __name__ == "__main__":
                     ['B', 'D', 'E'],
                     ['A', 'B', 'C', 'D']]
     fp_growth = FPGrowth(0.2)
-    for y in fp_growth.fit(tran):
+    fp_growth.fit(tran)
+    y_pre = fp_growth.predict([['A','B']])
+    for y in y_pre:
         print(y)

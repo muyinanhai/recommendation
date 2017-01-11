@@ -41,14 +41,14 @@ class Apriori(object):
         """
         return set([i.union(j) for i in arr for j in arr if len(i.union(j)) == length])
 
-    def _find_frequent_item_set(self, item_set, transaction_list, frequent_set):
+    def _find_frequent_item_set(self, item_set, transaction_list):
         tmp_item_set = set()
         local_set = defaultdict(int)
 
         for item in item_set:
             for transaction in transaction_list:
                 if item.issubset(transaction):
-                    frequent_set[item] += 1
+                    self._frequent_set[item] += 1
                     local_set[item] += 1
         for item, count in local_set.items():
             support = float(count) / self._transaction_len
@@ -67,7 +67,7 @@ class Apriori(object):
         k = 2
         current_set = set([item for item in item_set])
         while True:
-            current_set = self._find_frequent_item_set(current_set, transaction_list, self._frequent_set)
+            current_set = self._find_frequent_item_set(current_set, transaction_list)
             if len(current_set) == 0:
                 break
             large_set[k-1] = current_set
@@ -78,6 +78,7 @@ class Apriori(object):
             for item in val:
                 self._to_ret[frozenset(item)] = self._frequent_set[item] / self._transaction_len
 
+        # generate rules
         for key, val in large_set.items():
             if key == 1:
                 continue
@@ -181,4 +182,4 @@ if __name__ == '__main__':
     print("-----------------------------------------------")
     y_pre = alg.predict([['A','B']])
     for y in y_pre:
-        print (y)
+        print(y)
