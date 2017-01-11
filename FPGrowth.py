@@ -125,7 +125,8 @@ class FPTree(object):
             while node and not node.is_root():
                 path.append(node)
                 node = node.get_parent()
-            print(item, path)
+            # print(item, path)
+            path.reverse()
             return path
         return (collect_path(node) for node in self.nodes(item))
 
@@ -200,7 +201,7 @@ class FPNode(object):
 
     def print_tree(self, depth=0):
         print('  ' * depth) + repr(self)
-        for child in self.children:
+        for child in self._children:
             child.print_tree(depth + 1)
 
 if __name__ == "__main__":
