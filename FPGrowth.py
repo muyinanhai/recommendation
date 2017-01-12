@@ -112,8 +112,7 @@ class FPGrowth(object):
                     # skip the item have occur in x
                     if single_recommend in x:
                         continue
-                    recommend[single_recommend] = recommend.get(single_recommend, 0) + confidence * self._to_ret[
-                        subset] * len(subset) / len(x)
+                    recommend[single_recommend] = max(recommend.get(single_recommend, 0) + confidence)
         recommend = {key:val for key, val in recommend.items() if val>self._min_confidence}
         return sorted(recommend.items(), key=lambda d: d[1], reverse=True)
 
